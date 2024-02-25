@@ -14,6 +14,21 @@ const takeState = reactive({
   target: 'hand',
   num: 1
 })
+const calcRotate = (deg: number) => {
+  let viewRotate = 0
+  switch (state.value.view) {
+    case 'right':
+      viewRotate = 90
+      break
+    case 'top':
+      viewRotate = 180
+      break
+    case 'left':
+      viewRotate = 270
+      break
+  }
+  return (deg + viewRotate) % 360
+}
 const take = () => {
   const selectedItem = state.value.items.find(item => item.selected)
   if (selectedItem) {
@@ -64,7 +79,7 @@ const shuffle = () => {
 <template>
   <!-- 操作 -->
   <div
-    class="flex absolute bottom-[100%] flex-wrap -m-1.5 mb-2 opacity-0 transition-opacity group-hover:(opacity-100)"
+    class="flex absolute bottom-[100%] -m-1.5 mb-2 opacity-0 transition-opacity group-hover:(opacity-100)"
     :class="item.selected && 'opacity-100'"
   >
     <div v-if="item.data.cards.length > 1" class="flex justify-center relative text-dark font-bold">
@@ -115,7 +130,7 @@ const shuffle = () => {
     <Btn @click="flip">翻面</Btn>
     <Btn @click="rotate">旋转</Btn>
     <Btn>丢弃</Btn>
-    <Btn v-if="item.data.cards.length > 1">查看牌堆</Btn>
+    <Btn v-if="item.data.cards.length > 1">检索</Btn>
   </div>
   <!-- 卡牌 -->
   <div class="m-2">
@@ -147,12 +162,13 @@ const shuffle = () => {
       <!-- 卡牌卡堆 -->
       <div
         class="transition-filter"
+        :class="calcRotate(item.data.rotate) === 90 || calcRotate(item.data.rotate) === 270 ? 'w-90 h-60' : 'w-60 h-90'"
         :style="item.data.cards.length > 1 && 'filter: drop-shadow(2px 2px #fff); transform: translate(-1px, -1px);'"
       >
         <!-- 卡牌旋转 -->
-        <div class="transition-transform" :style="{ transform: `rotate(${item.data.rotate}deg)` }">
+        <div class="transition-transform h-full pointer-events-none" :style="{ transform: `rotate(${calcRotate(item.data.rotate)}deg)` }">
           <div
-            class="card w-60 h-90 rounded flex transition-transform duration-600"
+            class="card h-full flex justify-center items-center transition-transform duration-600"
             :class="item.data.isFlipped && 'rotate-y-180'"
           >
             <img class="card-front absolute m-auto" :src="`/img/cards/${item.data.cards[0].front}`" alt="">

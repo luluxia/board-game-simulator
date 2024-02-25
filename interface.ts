@@ -1,6 +1,23 @@
 export interface State {
   /** 物件 */
   items: Item[]
+  /** 视角 */
+  view: 'top' | 'bottom' | 'left' | 'right'
+  /** 缩放比例 */
+  scale: number
+}
+
+export interface Player {
+  /** 昵称 */
+  nick: string
+  /** 头像 */
+  avatar: string
+  /** 颜色 */
+  color: string
+  /** playroom 状态 */
+  state: any
+  /** 视角 */
+  view: 'top' | 'bottom' | 'left' | 'right'
 }
 
 export interface Item {

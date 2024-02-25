@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import interact from 'interactjs'
-import { insertCoin, RPC, me } from 'playroomkit'
-import type { State } from '~/interface'
+import { insertCoin, RPC, me, isHost, onPlayerJoin } from 'playroomkit'
+import type { State, Player } from '~/interface'
 
 const state = useState<State>('state', () => {
   return {
@@ -28,9 +28,14 @@ const state = useState<State>('state', () => {
           },
         }
       }
-    ]
+    ],
+    view: 'bottom',
+    scale: 1,
   }
 })
+
+const players = ref<Map<String, Player>>(new Map())
+provide('players', players)
 
 const board = ref<HTMLElement>()
 
@@ -44,20 +49,18 @@ onMounted(async () => {
   // 居中画布
   board.value.setAttribute('data-x', `${-(2500 - document.body.clientWidth / 2)}`)
   board.value.setAttribute('data-y', `${-(2500 - document.body.clientHeight / 2)}`)
-  board.value.setAttribute('data-scale', '1')
   board.value.style.transform = `translate(${-(2500 - document.body.clientWidth / 2)}px, ${-(2500 - document.body.clientHeight / 2)}px)`
   // 监听滚轮滚动，缩放画布
   document.body.addEventListener('wheel', (event) => {
     if (!board.value) return
     // event.preventDefault()
-    let scale = parseFloat(board.value.getAttribute('data-scale') || '1')
-    let oldScale = scale
+    let oldScale = state.value.scale
     let x = parseFloat(board.value.getAttribute('data-x') || '0')
     let y = parseFloat(board.value.getAttribute('data-y') || '0')
-    if (event.deltaY > 0 && scale > 0.25) {
-      scale -= 0.25
-    } else if (event.deltaY < 0 && scale < 1) {
-      scale += 0.25
+    if (event.deltaY > 0 && state.value.scale > 0.25) {
+      state.value.scale -= 0.25
+    } else if (event.deltaY < 0 && state.value.scale < 1) {
+      state.value.scale += 0.25
     } else {
       return
     }
@@ -73,8 +76,8 @@ onMounted(async () => {
     let centerY = rect.height / 2
 
     // 缩放后的中心点到画布左上角的距离
-    let newOriginX = centerX + (oldOriginX - centerX) * (scale / oldScale)
-    let newOriginY = centerY + (oldOriginY - centerY) * (scale / oldScale)
+    let newOriginX = centerX + (oldOriginX - centerX) * (state.value.scale / oldScale)
+    let newOriginY = centerY + (oldOriginY - centerY) * (state.value.scale / oldScale)
 
     // 两者之间的差值
     let dx = newOriginX - oldOriginX
@@ -85,8 +88,7 @@ onMounted(async () => {
 
     board.value.setAttribute('data-x', `${x}`)
     board.value.setAttribute('data-y', `${y}`)
-    board.value.setAttribute('data-scale', `${scale}`)
-    board.value.style.transform = `translate(${x}px, ${y}px) scale(${scale})`
+    board.value.style.transform = `translate(${x}px, ${y}px) scale(${state.value.scale})`
   })
   // 初始化画布拖拽
   interact(document.body)
@@ -95,10 +97,9 @@ onMounted(async () => {
         move(event) {
           const target = board.value
           if (!target) return
-          const scale = parseFloat(target.getAttribute('data-scale') || '1')
           const x = parseFloat(target.getAttribute('data-x') || '0') + event.dx
           const y = parseFloat(target.getAttribute('data-y') || '0') + event.dy
-          target.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${scale})`
+          target.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${state.value.scale})`
           target.setAttribute('data-x', x.toFixed(2))
           target.setAttribute('data-y', y.toFixed(2))
         },
@@ -125,23 +126,22 @@ onMounted(async () => {
       listeners: {
         move(event) {
           const item = getItem(event.target)
-          const scale = parseFloat(board.value?.getAttribute('data-scale') || '1')
           if (!item || !item.selected) {
             const x = parseFloat(board.value?.getAttribute('data-x') || '0') + event.dx
             const y = parseFloat(board.value?.getAttribute('data-y') || '0') + event.dy
-            board.value && (board.value.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${scale})`)
+            board.value && (board.value.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${state.value.scale})`)
             board.value?.setAttribute('data-x', x.toFixed(2))
             board.value?.setAttribute('data-y', y.toFixed(2))
           } else {
-            let x = Math.round(item.pos[0] + event.dx * (1 / scale))
-            let y = Math.round(item.pos[1] + event.dy * (1 / scale))
+            let x = Math.round(item.pos[0] + event.dx * (1 / state.value.scale))
+            let y = Math.round(item.pos[1] + event.dy * (1 / state.value.scale))
             item.pos = [x, y]
           }
         },
         end(event) {
           const item = getItem(event.target)
           if (item) {
-            RPC.call('move', { id: item.id, pos: item.pos }, RPC.Mode.OTHERS)
+            RPC.call('move', { id: item.id, pos: item.pos, view: state.value.view }, RPC.Mode.OTHERS)
           }
         }
       },
@@ -184,6 +184,30 @@ onMounted(async () => {
     })
     .styleCursor(false)
 
+  onPlayerJoin((player) => {
+    players.value.set(player.id, {
+      nick: player.getProfile().name,
+      avatar: player.getProfile().photo,
+      color: player.getProfile()?.color?.hexString,
+      state: player,
+      view: 'bottom',
+    })
+    player.onQuit(() => {
+      players.value.delete(player.id)
+    })
+  })
+  RPC.call('setColor', {
+    id: me().id,
+    color: me().getProfile().color.hexString
+  })
+  RPC.register('setColor', data => new Promise(resolve => {
+    console.log(data)
+    const player = players.value.get(data.id)
+    if (player) {
+      player.color = data.color
+    }
+    resolve('ok')
+  }))
   RPC.register('select', data => {
     const item = state.value.items.find(item => item.id === data.id)
     if (item) {
@@ -200,7 +224,47 @@ onMounted(async () => {
     console.log(data)
     const item = state.value.items.find(item => item.id === data.id)
     if (item) {
-      item.pos = data.pos
+      const oldView = data.view
+      const newView = state.value.view
+      if (
+        oldView === 'bottom' && newView === 'top' ||
+        oldView === 'top' && newView === 'bottom' ||
+        oldView === 'left' && newView === 'right' ||
+        oldView === 'right' && newView === 'left'
+      ) {
+        const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
+        const itemWidth = rect!.width / state.value.scale
+        const itemHeight = rect!.height / state.value.scale
+        // 进行中心对称变换
+        item.pos[0] = 5000 - data.pos[0] - itemWidth
+        item.pos[1] = 5000 - data.pos[1] - itemHeight
+      } else if (
+        oldView === 'top' && newView === 'left' ||
+        oldView === 'bottom' && newView === 'right' ||
+        oldView === 'left' && newView === 'bottom' ||
+        oldView === 'right' && newView === 'top'
+      ) {
+        const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
+        const itemWidth = rect!.width / state.value.scale
+        // 进行顺时针旋转90度
+        const x = data.pos[0]
+        item.pos[0] = 5000 - data.pos[1] - itemWidth
+        item.pos[1] = x
+      } else if (
+        oldView === 'top' && newView === 'right' ||
+        oldView === 'bottom' && newView === 'left' ||
+        oldView === 'left' && newView === 'top' ||
+        oldView === 'right' && newView === 'bottom'
+      ) {
+        const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
+        const itemHeight = rect!.height / state.value.scale
+        // 进行逆时针旋转90度
+        const y = data.pos[1]
+        item.pos[1] = 5000 - data.pos[0] - itemHeight
+        item.pos[0] = y
+      } else {
+        item.pos = data.pos
+      }
     }
     return 'ok' as any
   })
@@ -216,6 +280,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <Setting />
+  <PlayerOverlay />
   <div class="w-screen h-screen overflow-hidden">
     <div ref="board" class="w-[5000px] h-[5000px] rounded-xl pattern-dots-xl bg-dark text-white/5">
       <div
@@ -242,6 +308,9 @@ onMounted(async () => {
 </template>
 
 <style>
+body {
+  overflow: hidden;
+}
 .fade-enter-active, .fade-leave-active {  
   transition: opacity 0.3s;
 }
