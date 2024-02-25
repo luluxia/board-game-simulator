@@ -10,8 +10,21 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@unocss/reset": "^0.58.5",
+    "interactjs": "^1.10.26",
     "nuxt": "^3.10.2",
+    "pattern.css": "^1.0.0",
+    "playroomkit": "^0.0.68",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "vue": "^3.4.19",
     "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@unocss/nuxt": "^0.58.5",
+    "@unocss/transformer-directives": "^0.58.5",
+    "@unocss/transformer-variant-group": "^0.58.5",
+    "sass": "^1.71.0",
+    "unocss": "^0.58.5"
   }
 }
