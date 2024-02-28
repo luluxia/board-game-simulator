@@ -30,9 +30,15 @@ const state = useState<State>('state', () => {
       //   }
       // }
     ],
-    view: 'bottom',
-    scale: 1,
-    boardTransition: true,
+    board: {
+      width: 5000,
+      height: 5000,
+      view: 'bottom',
+      pos: [0, 0],
+      scale: 1,
+      rotate: 0,
+      transition: false,
+    },
     libraryVisible: false,
   }
 })
@@ -48,35 +54,32 @@ const getItem = (target: HTMLElement) => {
 
 onMounted(async () => {
   await insertCoin()
-  if (!board.value) return
   // 居中画布
-  board.value.setAttribute('data-x', `${-(2500 - document.body.clientWidth / 2)}`)
-  board.value.setAttribute('data-y', `${-(2500 - document.body.clientHeight / 2)}`)
-  board.value.style.transform = `translate(${-(2500 - document.body.clientWidth / 2)}px, ${-(2500 - document.body.clientHeight / 2)}px)`
+  state.value.board.pos = [-(2500 - document.body.clientWidth / 2), -(2500 - document.body.clientHeight / 2)]
   // 监听滚轮滚动，缩放画布
   document.body.addEventListener('wheel', (event) => {
-    if (!board.value) return
-    state.value.boardTransition = true
-    // event.preventDefault()
-    let oldScale = state.value.scale
-    let x = parseFloat(board.value.getAttribute('data-x') || '0')
-    let y = parseFloat(board.value.getAttribute('data-y') || '0')
-    if (event.deltaY > 0 && state.value.scale > 0.25) {
-      state.value.scale -= 0.25
-    } else if (event.deltaY < 0 && state.value.scale < 1) {
-      state.value.scale += 0.25
+    state.value.board.transition = true
+
+    let oldScale = state.value.board.scale
+    let x = state.value.board.pos[0]
+    let y = state.value.board.pos[1]
+
+    if (event.deltaY > 0 && oldScale > 0.25) {
+      state.value.board.scale -= 0.25
+    } else if (event.deltaY < 0 && oldScale < 1) {
+      state.value.board.scale += 0.25
     } else {
       return
     }
 
-    let originalWidth = 5000;
-    let originalHeight = 5000;
+    let originalWidth = 5000
+    let originalHeight = 5000
 
-    let newWidth = originalWidth * oldScale;
-    let newHeight = originalHeight * oldScale;
+    let newWidth = originalWidth * oldScale
+    let newHeight = originalHeight * oldScale
 
-    let newX = x + (originalWidth - newWidth) / 2;
-    let newY = y + (originalHeight - newHeight) / 2;
+    let newX = x + (originalWidth - newWidth) / 2
+    let newY = y + (originalHeight - newHeight) / 2
 
     let rect = {
       top: newY,
@@ -85,7 +88,7 @@ onMounted(async () => {
       height: newHeight,
       right: newX + newWidth,
       bottom: newY + newHeight
-    };
+    }
 
     // 获取屏幕中心点到画布左上角的距离
     let oldOriginX = document.body.clientWidth / 2 - rect.left
@@ -96,8 +99,8 @@ onMounted(async () => {
     let centerY = rect.height / 2
 
     // 缩放后的中心点到画布左上角的距离
-    let newOriginX = centerX + (oldOriginX - centerX) * (state.value.scale / oldScale)
-    let newOriginY = centerY + (oldOriginY - centerY) * (state.value.scale / oldScale)
+    let newOriginX = centerX + (oldOriginX - centerX) * (state.value.board.scale / oldScale)
+    let newOriginY = centerY + (oldOriginY - centerY) * (state.value.board.scale / oldScale)
 
     // 两者之间的差值
     let dx = newOriginX - oldOriginX
@@ -106,32 +109,27 @@ onMounted(async () => {
     x -= dx
     y -= dy
 
-    board.value.setAttribute('data-x', `${x}`)
-    board.value.setAttribute('data-y', `${y}`)
-    board.value.style.transform = `translate(${x}px, ${y}px) scale(${state.value.scale})`
+    state.value.board.pos = [x, y]
   })
   // 初始化画布拖拽
   interact(document.body)
     .draggable({
       listeners: {
         start() {
-          state.value.boardTransition = false
+          state.value.board.transition = false
         },
         move(event) {
-          const target = board.value
-          if (!target) return
-          const x = parseFloat(target.getAttribute('data-x') || '0') + event.dx
-          const y = parseFloat(target.getAttribute('data-y') || '0') + event.dy
-          target.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${state.value.scale})`
-          target.setAttribute('data-x', x.toFixed(2))
-          target.setAttribute('data-y', y.toFixed(2))
+          const x = +(state.value.board.pos[0] + event.dx).toFixed(2)
+          const y = +(state.value.board.pos[1] + event.dy).toFixed(2)
+          state.value.board.pos = [x, y]
         },
         end() {
-          state.value.boardTransition = true
+          state.value.board.transition = true
         }
       }
     })
     .on('tap', (event) => {
+      // 取消选中
       if (board.value === event.target) {
         state.value.items.forEach(item => item.selected = false)
         RPC.call('noSelect', { player: me().getProfile().name }, RPC.Mode.OTHERS)
@@ -151,28 +149,26 @@ onMounted(async () => {
     .draggable({
       listeners: {
         start() {
-          state.value.boardTransition = false
+          state.value.board.transition = false
         },
         move(event) {
           const item = getItem(event.target)
           if (!item || !item.selected) {
-            const x = parseFloat(board.value?.getAttribute('data-x') || '0') + event.dx
-            const y = parseFloat(board.value?.getAttribute('data-y') || '0') + event.dy
-            board.value && (board.value.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${state.value.scale})`)
-            board.value?.setAttribute('data-x', x.toFixed(2))
-            board.value?.setAttribute('data-y', y.toFixed(2))
+            const x = +(state.value.board.pos[0] + event.dx).toFixed(2)
+            const y = +(state.value.board.pos[1] + event.dy).toFixed(2)
+            state.value.board.pos = [x, y]
           } else {
-            let x = Math.round(item.pos[0] + event.dx * (1 / state.value.scale))
-            let y = Math.round(item.pos[1] + event.dy * (1 / state.value.scale))
+            let x = Math.round(item.pos[0] + event.dx * (1 / state.value.board.scale))
+            let y = Math.round(item.pos[1] + event.dy * (1 / state.value.board.scale))
             item.pos = [x, y]
           }
         },
         end(event) {
           const item = getItem(event.target)
           if (item) {
-            RPC.call('move', { id: item.id, pos: item.pos, view: state.value.view }, RPC.Mode.OTHERS)
+            RPC.call('move', { id: item.id, pos: item.pos, view: state.value.board.view }, RPC.Mode.OTHERS)
           }
-          state.value.boardTransition = true
+          state.value.board.transition = true
         }
       },
       modifiers: [
@@ -255,7 +251,7 @@ onMounted(async () => {
     const item = state.value.items.find(item => item.id === data.id)
     if (item) {
       const oldView = data.view
-      const newView = state.value.view
+      const newView = state.value.board.view
       if (
         oldView === 'bottom' && newView === 'top' ||
         oldView === 'top' && newView === 'bottom' ||
@@ -263,8 +259,8 @@ onMounted(async () => {
         oldView === 'right' && newView === 'left'
       ) {
         const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
-        const itemWidth = rect!.width / state.value.scale
-        const itemHeight = rect!.height / state.value.scale
+        const itemWidth = rect!.width / state.value.board.scale
+        const itemHeight = rect!.height / state.value.board.scale
         // 进行中心对称变换
         item.pos[0] = 5000 - data.pos[0] - itemWidth
         item.pos[1] = 5000 - data.pos[1] - itemHeight
@@ -275,7 +271,7 @@ onMounted(async () => {
         oldView === 'right' && newView === 'top'
       ) {
         const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
-        const itemWidth = rect!.width / state.value.scale
+        const itemWidth = rect!.width / state.value.board.scale
         // 进行顺时针旋转90度
         const x = data.pos[0]
         item.pos[0] = 5000 - data.pos[1] - itemWidth
@@ -287,7 +283,7 @@ onMounted(async () => {
         oldView === 'right' && newView === 'bottom'
       ) {
         const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
-        const itemHeight = rect!.height / state.value.scale
+        const itemHeight = rect!.height / state.value.board.scale
         // 进行逆时针旋转90度
         const y = data.pos[1]
         item.pos[1] = 5000 - data.pos[0] - itemHeight
@@ -310,7 +306,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Transition name="fade">
+  <Transition name="slide-in-right">
     <Library v-if="state.libraryVisible" />
   </Transition>
   <Setting />
@@ -318,8 +314,16 @@ onMounted(async () => {
   <div class="w-screen h-screen overflow-hidden">
     <div
       ref="board"
-      class="board w-[5000px] h-[5000px] rounded-xl pattern-dots-xl bg-dark text-white/5"
-      :class="state.boardTransition && 'transition-transform duration-150'"
+      class="board rounded-xl pattern-dots-xl bg-dark text-white/5"
+      :class="state.board.transition && 'transition-transform duration-150'"
+      :style="{
+        width: `${state.board.width}px`,
+        height: `${state.board.height}px`,
+        transform: `
+          translate(${state.board.pos[0]}px, ${state.board.pos[1]}px) 
+          scale(${state.board.scale}) 
+          rotate(${state.board.rotate}deg)`,
+      }"
     >
       <div
         v-for="item in state.items"
@@ -353,5 +357,11 @@ body {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+.slide-in-right-enter-active, .slide-in-right-leave-active {
+  transition: transform 0.3s;
+}
+.slide-in-right-enter-from, .slide-in-right-leave-to {
+  transform: translateX(100%);
 }
 </style>

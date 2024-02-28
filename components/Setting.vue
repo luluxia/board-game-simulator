@@ -6,7 +6,7 @@
         v-for="view in views"
         @click="changeView(view.id)"
         class="cursor-pointer"
-        :class="state.view === view.id && 'text-blue-5 font-bold'"
+        :class="state.board.view === view.id && 'text-blue-5 font-bold'"
       >{{ view.name }}</span>
     </div>
     <div @click="state.libraryVisible = true" class="bg-white p-2 rounded cursor-pointer">
@@ -25,10 +25,12 @@ const views = [
   { id: 'right', name: '右' },
 ]
 const changeView = (view: any) => {
-  const oldView = state.value.view
-  const board = document.querySelector('.board') as HTMLElement
+  state.value.items.forEach(item => {
+    item.selected = false
+  })
+  const oldView = state.value.board.view
   setTimeout(() => {
-    state.value.view = view
+    state.value.board.view = view
   }, 150)
   if (
     oldView === 'bottom' && view === 'top' ||
@@ -36,15 +38,15 @@ const changeView = (view: any) => {
     oldView === 'left' && view === 'right' ||
     oldView === 'right' && view === 'left'
   ) {
-    state.value.boardTransition = true
-    board.style.transform += 'rotate(180deg)'
+    state.value.board.transition = true
+    state.value.board.rotate = 180
     setTimeout(() => {
-      state.value.boardTransition = false
-      board.style.transform = board.style.transform.replace('rotate(180deg)', '')
+      state.value.board.transition = false
+      state.value.board.rotate = 0
       state.value.items.forEach(item => {
         const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
-        const itemWidth = rect!.width / state.value.scale
-        const itemHeight = rect!.height / state.value.scale
+        const itemWidth = rect!.width / state.value.board.scale
+        const itemHeight = rect!.height / state.value.board.scale
         // 进行中心对称变换
         item.pos[0] = 5000 - item.pos[0] - itemWidth
         item.pos[1] = 5000 - item.pos[1] - itemHeight
@@ -56,14 +58,14 @@ const changeView = (view: any) => {
     oldView === 'left' && view === 'bottom' ||
     oldView === 'right' && view === 'top'
   ) {
-    state.value.boardTransition = true
-    board.style.transform += 'rotate(90deg)'
+    state.value.board.transition = true
+    state.value.board.rotate = 90
     setTimeout(() => {
-      state.value.boardTransition = false
-      board.style.transform = board.style.transform.replace('rotate(90deg)', '')
+      state.value.board.transition = false
+      state.value.board.rotate = 0
       state.value.items.forEach(item => {
         const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
-        const itemHeight = rect!.height / state.value.scale
+        const itemHeight = rect!.height / state.value.board.scale
         // 进行顺时针旋转90度
         const x = item.pos[0]
         item.pos[0] = 5000 - item.pos[1] - itemHeight
@@ -76,14 +78,14 @@ const changeView = (view: any) => {
     oldView === 'left' && view === 'top' ||
     oldView === 'right' && view === 'bottom'
   ) {
-    state.value.boardTransition = true
-    board.style.transform += 'rotate(-90deg)'
+    state.value.board.transition = true
+    state.value.board.rotate = -90
     setTimeout(() => {
-      state.value.boardTransition = false
-      board.style.transform = board.style.transform.replace('rotate(-90deg)', '')
+      state.value.board.transition = false
+      state.value.board.rotate = 0
       state.value.items.forEach(item => {
         const rect = document.querySelector(`[data-id="${item.id}"]`)?.getBoundingClientRect()
-        const itemWidth = rect!.width / state.value.scale
+        const itemWidth = rect!.width / state.value.board.scale
         // 进行逆时针旋转90度
         const y = item.pos[1]
         item.pos[1] = 5000 - item.pos[0] - itemWidth

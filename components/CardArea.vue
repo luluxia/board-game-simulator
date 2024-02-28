@@ -16,7 +16,7 @@ const takeState = reactive({
 })
 const calcRotate = (deg: number) => {
   let viewRotate = 0
-  switch (state.value.view) {
+  switch (state.value.board.view) {
     case 'right':
       viewRotate = 90
       break
@@ -44,7 +44,7 @@ const take = () => {
       selected: false
     }
     state.value.items.push(newItem)
-    selectedItem.data.cards.pop()
+    selectedItem.data.cards.shift()
     takeState.visible = false
   }
 }
@@ -185,7 +185,7 @@ const shuffle = () => {
 
   </div>
   <!-- 区域信息 -->
-  <p v-if="item.data.name || item.data.cards.length !== 1" class="absolute flex justify-between w-full px-2 mt-1 text-white/60">
+  <p v-if="(item.data.name || item.data.cards.length !== 1) && state.board.rotate === 0" class="absolute flex justify-between w-full px-2 mt-1 text-white/60">
     <span>{{ item.data.name }}</span>
     <span v-if="item.data.cards.length > 1">剩余 {{ item.data.cards.length }} 张</span>
   </p>

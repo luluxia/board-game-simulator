@@ -1,13 +1,22 @@
 export interface State {
   /** 物件 */
   items: Item[]
-  /** 视角 */
-  view: 'top' | 'bottom' | 'left' | 'right'
-  /** 缩放比例 */
-  scale: number
-  /** 激活桌布过渡 */
-  boardTransition: boolean
-  /** 打开仓库 */
+  /** 桌布 */
+  board: {
+    width: number
+    height: number
+    /** 视角 */
+    view: 'top' | 'bottom' | 'left' | 'right'
+    /** 位置 */
+    pos: [number, number]
+    /** 缩放比例 */
+    scale: number
+    /** 旋转 */
+    rotate: number
+    /** 激活桌布过渡 */
+    transition: boolean
+  }
+  /** 仓库 */
   libraryVisible: boolean
 }
 

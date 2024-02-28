@@ -1,11 +1,11 @@
 <template>
   <div class="fixed w-150 h-screen bg-white text-dark z-2 right-0 p-5 rounded">
-    <div class="font-bold flex justify-between">
-      <p class="p-2">仓库</p>
-      <p @click="state.libraryVisible = false" class="p-2 text-rose-5 cursor-pointer">关闭</p>
+    <div class="font-bold flex justify-between px-2 pb-2">
+      <p>仓库</p>
+      <p @click="state.libraryVisible = false" class="text-rose-5 cursor-pointer">关闭</p>
     </div>
     <div v-for="lib in data?.lib">
-      <p class="font-bold p-2 bg-gray-2 rounded">{{ lib.name }}</p>
+      <p class="font-bold p-2 bg-gray-1 rounded">{{ lib.name }}</p>
       <div
         v-for="item in lib.content"
         @click="addItem(item)"
@@ -32,7 +32,7 @@ const addItem = (item: any) => {
   state.value.items.push({
     id: new Date().getTime().toString(),
     type: 'cardArea',
-    pos: [2500, 2500],
+    pos: [2500 + item.width / 2, 2500 + item.height / 2],
     data: {
       name: '',
       type: 'stack',
@@ -47,7 +47,6 @@ const addItem = (item: any) => {
     },
     selected: false,
   })
-  console.log(state.value.items)
 }
 </script>
 
