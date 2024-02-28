@@ -61,11 +61,11 @@ export interface CardArea {
   isFlipped: boolean
   /** 旋转角度 */
   rotate: number
-  /** 放置状态 */
+  /** 放入状态 */
   placeState: {
-    /** 是否显示放置 */
+    /** 是否显示放入 */
     show: boolean
-    /** 放置位置 */
+    /** 放入位置 */
     pos: 'front' | 'back' | ''
   }
 }

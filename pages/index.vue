@@ -182,28 +182,26 @@ onMounted(async () => {
       ondropactivate: (event) => {
         const dragItem = getItem(event.relatedTarget)
         const item = getItem(event.target)
-        console.log(dragItem, item)
         if (dragItem?.selected && item) {
           item.data.placeState.show = true
         }
-        console.log('dropactivate')
       },
       ondropdeactivate: (event) => {
         const item = getItem(event.target)
         if (item) {
           item.data.placeState.show = false
         }
-        console.log('dropdeactivate')
       },
       ondrop: (event) => {
-        console.log('drop')
         const dragItem = getItem(event.relatedTarget)
         const item = getItem(event.target)
         if (dragItem?.selected && item) {
           item.data.placeState.show = false
-          dragItem.data.cards.forEach(card => {
-            item.data.cards.push(card)
-          })
+          if (item.data.placeState.pos === 'front') {
+            item.data.cards.unshift(...dragItem.data.cards)
+          } else {
+            item.data.cards.push(...dragItem.data.cards)
+          }
           state.value.items = state.value.items.filter(item => item.id !== dragItem.id)
         }
       }

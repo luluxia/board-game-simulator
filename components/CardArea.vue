@@ -32,6 +32,9 @@ const calcRotate = (deg: number) => {
 const take = () => {
   const selectedItem = state.value.items.find(item => item.selected)
   if (selectedItem) {
+    const newCards = takeState.position === 'front'
+      ? selectedItem.data.cards.splice(0, takeState.num)
+      : selectedItem.data.cards.splice(-takeState.num)
     const newItem: Item = {
       id: String(Date.now()),
       type: 'cardArea',
@@ -39,12 +42,11 @@ const take = () => {
       data: {
         ...JSON.parse(JSON.stringify(selectedItem.data)),
         name: '',
-        cards: [selectedItem.data.cards[0]],
+        cards: newCards,
       },
       selected: false
     }
     state.value.items.push(newItem)
-    selectedItem.data.cards.shift()
     takeState.visible = false
   }
 }
@@ -134,7 +136,7 @@ const shuffle = () => {
   </div>
   <!-- 卡牌 -->
   <div class="m-2">
-    <!-- 放置提示 -->
+    <!-- 放入提示 -->
     <Transition name="fade">
       <div
         v-if="item.data.placeState.show"
@@ -147,13 +149,13 @@ const shuffle = () => {
           @mouseover="item.data.placeState.pos = 'front'"
           class="flex-1 flex justify-center items-center rounded transition-colors hover:(bg-white text-dark)"
         >
-          放置于顶部
+          放入顶部
         </div>
         <div
           @mouseover="item.data.placeState.pos = 'back'"
           class="flex-1 flex justify-center items-center rounded transition-colors hover:(bg-white text-dark)"
         >
-          放置于底部
+          放入底部
         </div>
       </div>
     </Transition>

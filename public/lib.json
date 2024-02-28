@@ -14,10 +14,10 @@
             { "id": "2", "name": "蓝色0", "front": "uno/card2.svg", "back": "uno/back.svg" },
             { "id": "3", "name": "绿色0", "front": "uno/card3.svg", "back": "uno/back.svg" },
             { "id": "4", "name": "红色0", "front": "uno/card4.svg", "back": "uno/back.svg" },
-            { "id": "5", "name": "黄色1", "front": "uno/card5.svg", "back": "uno/back.svg" },
+            { "id": "5", "name": "蓝色1", "front": "uno/card5.svg", "back": "uno/back.svg" },
             { "id": "6", "name": "蓝色1", "front": "uno/card6.svg", "back": "uno/back.svg" },
             { "id": "7", "name": "绿色1", "front": "uno/card7.svg", "back": "uno/back.svg" },
-            { "id": "8", "name": "红色1", "front": "uno/card8.svg", "back": "uno/back.svg" }
+            { "id": "8", "name": "绿色1", "front": "uno/card8.svg", "back": "uno/back.svg" }
           ]
         }
       ]
