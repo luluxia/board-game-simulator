@@ -5,6 +5,10 @@ export interface State {
   view: 'top' | 'bottom' | 'left' | 'right'
   /** 缩放比例 */
   scale: number
+  /** 激活桌布过渡 */
+  boardTransition: boolean
+  /** 打开仓库 */
+  libraryVisible: boolean
 }
 
 export interface Player {

@@ -166,7 +166,11 @@ const shuffle = () => {
         :style="item.data.cards.length > 1 && 'filter: drop-shadow(2px 2px #fff); transform: translate(-1px, -1px);'"
       >
         <!-- 卡牌旋转 -->
-        <div class="transition-transform h-full pointer-events-none" :style="{ transform: `rotate(${calcRotate(item.data.rotate)}deg)` }">
+        <div
+          class="h-full pointer-events-none"
+          :class="item.selected && 'transition-transform'"
+          :style="{ transform: `rotate(${calcRotate(item.data.rotate)}deg)` }"
+        >
           <div
             class="card h-full flex justify-center items-center transition-transform duration-600"
             :class="item.data.isFlipped && 'rotate-y-180'"

@@ -2,35 +2,38 @@
 import interact from 'interactjs'
 import { insertCoin, RPC, me, isHost, onPlayerJoin } from 'playroomkit'
 import type { State, Player } from '~/interface'
+import { throttle } from '~/utils'
 
 const state = useState<State>('state', () => {
   return {
     items: [
-      {
-        id: '1',
-        type: 'cardArea',
-        pos: [2500 - 240 / 2, 2500 - 360 / 2],
-        selected: false,
-        data: {
-          name: '牌堆',
-          type: 'stack',
-          areaType: 'public',
-          cards: [
-            { id: 'uno_80', name: 'UNO', front: 'uno/card80.svg', back: 'uno/back.svg' },
-            { id: 'uno_80', name: 'UNO', front: 'uno/card80.svg', back: 'uno/back.svg' },
-            { id: 'uno_80', name: 'UNO', front: 'uno/card80.svg', back: 'uno/back.svg' },
-          ],
-          isFlipped: false,
-          rotate: 0,
-          placeState: {
-            show: false,
-            pos: '',
-          },
-        }
-      }
+      // {
+      //   id: '0',
+      //   type: 'cardArea',
+      //   pos: [2500 - 240 / 2, 2500 - 360 / 2],
+      //   selected: false,
+      //   data: {
+      //     name: '牌堆',
+      //     type: 'stack',
+      //     areaType: 'public',
+      //     cards: [
+      //       { id: 'uno_80', name: 'UNO', front: 'uno/card80.svg', back: 'uno/back.svg' },
+      //       { id: 'uno_80', name: 'UNO', front: 'uno/card80.svg', back: 'uno/back.svg' },
+      //       { id: 'uno_80', name: 'UNO', front: 'uno/card80.svg', back: 'uno/back.svg' },
+      //     ],
+      //     isFlipped: false,
+      //     rotate: 0,
+      //     placeState: {
+      //       show: false,
+      //       pos: '',
+      //     },
+      //   }
+      // }
     ],
     view: 'bottom',
     scale: 1,
+    boardTransition: true,
+    libraryVisible: false,
   }
 })
 
@@ -53,6 +56,7 @@ onMounted(async () => {
   // 监听滚轮滚动，缩放画布
   document.body.addEventListener('wheel', (event) => {
     if (!board.value) return
+    state.value.boardTransition = true
     // event.preventDefault()
     let oldScale = state.value.scale
     let x = parseFloat(board.value.getAttribute('data-x') || '0')
@@ -65,7 +69,23 @@ onMounted(async () => {
       return
     }
 
-    let rect = board.value.getBoundingClientRect()
+    let originalWidth = 5000;
+    let originalHeight = 5000;
+
+    let newWidth = originalWidth * oldScale;
+    let newHeight = originalHeight * oldScale;
+
+    let newX = x + (originalWidth - newWidth) / 2;
+    let newY = y + (originalHeight - newHeight) / 2;
+
+    let rect = {
+      top: newY,
+      left: newX,
+      width: newWidth,
+      height: newHeight,
+      right: newX + newWidth,
+      bottom: newY + newHeight
+    };
 
     // 获取屏幕中心点到画布左上角的距离
     let oldOriginX = document.body.clientWidth / 2 - rect.left
@@ -94,6 +114,9 @@ onMounted(async () => {
   interact(document.body)
     .draggable({
       listeners: {
+        start() {
+          state.value.boardTransition = false
+        },
         move(event) {
           const target = board.value
           if (!target) return
@@ -103,6 +126,9 @@ onMounted(async () => {
           target.setAttribute('data-x', x.toFixed(2))
           target.setAttribute('data-y', y.toFixed(2))
         },
+        end() {
+          state.value.boardTransition = true
+        }
       }
     })
     .on('tap', (event) => {
@@ -124,6 +150,9 @@ onMounted(async () => {
     })
     .draggable({
       listeners: {
+        start() {
+          state.value.boardTransition = false
+        },
         move(event) {
           const item = getItem(event.target)
           if (!item || !item.selected) {
@@ -143,6 +172,7 @@ onMounted(async () => {
           if (item) {
             RPC.call('move', { id: item.id, pos: item.pos, view: state.value.view }, RPC.Mode.OTHERS)
           }
+          state.value.boardTransition = true
         }
       },
       modifiers: [
@@ -280,10 +310,17 @@ onMounted(async () => {
 </script>
 
 <template>
+  <Transition name="fade">
+    <Library v-if="state.libraryVisible" />
+  </Transition>
   <Setting />
   <PlayerOverlay />
   <div class="w-screen h-screen overflow-hidden">
-    <div ref="board" class="w-[5000px] h-[5000px] rounded-xl pattern-dots-xl bg-dark text-white/5">
+    <div
+      ref="board"
+      class="board w-[5000px] h-[5000px] rounded-xl pattern-dots-xl bg-dark text-white/5"
+      :class="state.boardTransition && 'transition-transform duration-150'"
+    >
       <div
         v-for="item in state.items"
         class="item absolute w-max h-max rounded transition-duration-150 ring-transparent ring-2 group hover:(ring-white/50 bg-dark/80)"
