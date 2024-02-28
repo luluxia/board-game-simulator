@@ -29,10 +29,11 @@ import type { State } from '~/interface'
 const state = useState<State>('state')
 const { data: data } = await useFetch<{lib: any}>('lib.json')
 const addItem = (item: any) => {
+  const pos = [(state.value.board.width - item.width) / 2, (state.value.board.height - item.height) / 2]
   state.value.items.push({
     id: new Date().getTime().toString(),
     type: 'cardArea',
-    pos: [2500 + item.width / 2, 2500 + item.height / 2],
+    pos: [pos[0], pos[1]],
     data: {
       name: '',
       type: 'stack',
@@ -47,6 +48,11 @@ const addItem = (item: any) => {
     },
     selected: false,
   })
+  state.value.board.transition = true
+  state.value.board.pos = [
+    -pos[0] + (document.body.clientWidth - item.width) / 2 - 300,
+    -pos[1] + (document.body.clientHeight - item.height) / 2,
+  ]
 }
 </script>
 
