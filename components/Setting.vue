@@ -16,8 +16,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { State } from '~/interface'
+import { RPC, me } from 'playroomkit'
+import type { State, Player } from '~/interface'
 const state = useState<State>('state')
+const player = inject<Ref<Map<String, Player>>>('players')
 const views = [
   { id: 'top', name: '上' },
   { id: 'bottom', name: '下' },
@@ -31,6 +33,11 @@ const changeView = (view: any) => {
   const oldView = state.value.board.view
   setTimeout(() => {
     state.value.board.view = view
+    RPC.call('changeView', { id: me().id, view }, RPC.Mode.OTHERS)
+    const targetPlayer = player?.value.get(me().id)
+    if (targetPlayer) {
+      targetPlayer.view = view
+    }
   }, 150)
   if (
     oldView === 'bottom' && view === 'top' ||

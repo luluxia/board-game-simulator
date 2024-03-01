@@ -39,6 +39,7 @@ const state = useState<State>('state', () => {
       rotate: 0,
       transition: false,
     },
+    hand: [],
     libraryVisible: false,
   }
 })
@@ -232,6 +233,13 @@ onMounted(async () => {
     }
     resolve('ok')
   }))
+  RPC.register('changeView', data => new Promise(resolve => {
+    const player = players.value.get(data.id)
+    if (player) {
+      player.view = data.view
+    }
+    resolve('ok')
+  }))
   RPC.register('select', data => {
     const item = state.value.items.find(item => item.id === data.id)
     if (item) {
@@ -309,6 +317,7 @@ onMounted(async () => {
   </Transition>
   <Setting />
   <PlayerOverlay />
+  <HandArea />
   <div class="w-screen h-screen overflow-hidden">
     <div
       ref="board"

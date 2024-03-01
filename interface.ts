@@ -16,6 +16,8 @@ export interface State {
     /** 激活桌布过渡 */
     transition: boolean
   }
+  /** 手牌 */
+  hand: HandCard[]
   /** 仓库 */
   libraryVisible: boolean
 }
@@ -79,4 +81,13 @@ export interface Card {
   front: string
   /** 卡背 */
   back: string
+}
+
+export interface HandCard extends Card {
+  width?: number
+  height?: number
+  /** 层级 */
+  layer: number
+  /** 过渡动画 */
+  transition: boolean
 }
